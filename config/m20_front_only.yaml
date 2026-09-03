@@ -1,0 +1,36 @@
+common:
+  msg_source: 1
+  send_packet_ros: false
+  send_point_cloud_ros: true
+
+lidar:
+  - driver:
+      lidar_type: RSAIRY
+      msop_port: 6691
+      difop_port: 7781
+      imu_port: 0
+      host_address: 10.21.31.192
+      group_address: 224.10.10.201
+      socket_recv_buf: 4194304
+      user_layer_bytes: 0
+      tail_layer_bytes: 0
+      min_distance: 0.2
+      max_distance: 200
+      use_lidar_clock: true
+      dense_points: true
+      ts_first_point: true
+      start_angle: 0
+      end_angle: 360
+      x: 0.32028
+      y: 0
+      z: -0.013
+      roll: 0
+      pitch: 0
+      yaw: 0
+    ros:
+      ros_frame_id: rslidar_front
+      ros_recv_packet_topic: /rslidar_packets_front
+      ros_send_packet_topic: /rslidar_packets_front
+      ros_send_imu_data_topic: /rslidar_imu_data_front
+      ros_send_point_cloud_topic: /rslidar_points_front
+      ros_queue_length: 100

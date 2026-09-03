@@ -171,3 +171,71 @@ rslidar_sdk的功能通过配置参数文件来实现，请仔细阅读。
 [录制ROS数据包然后播放它](doc/howto/11_how_to_record_replay_packet_rosbag_CN.md)
 
 [ROS2_humble帧率降低解决方法](doc/howto/13_how_to_solve_ROS2_humble_frame_rate_drop_CN.md)
+
+## 1.8 M20 背部主机资源检查与 CPU 绑定
+
+M20 Pro 背部主机为 4 核 CPU。点云频率下降时，不能只看总 CPU；必须查看每个核心的负载。某一个核心达到 100% 而其他核心空闲，仍会导致 UDP 接收和 ROS2 发布线程得不到及时调度。
+
+查看资源和各核心负载：
+
+```sh
+nproc
+uptime
+free -h
+mpstat -P ALL 1 10
+vmstat 1 5
+ps -eLo pid,tid,psr,pcpu,stat,comm --sort=-pcpu | head -30
+```
+
+定位指定核心上的高占用线程（以下示例为 CPU1）：
+
+```sh
+ps -eLo pid,tid,psr,pcpu,stat,comm --sort=-pcpu \
+  | awk 'NR==1 || $3==1' | head -30
+ps -fp <PID>
+tr '\0' ' ' < /proc/<PID>/cmdline; echo
+```
+
+不要在不了解用途的情况下停止其他人的 Python、Java、ffmpeg 或业务进程。
+
+查看 SDK 进程及线程：
+
+```sh
+PID=$(pgrep -n -f rslidar_sdk_node)
+taskset -pc "$PID"
+ps -T -p "$PID" -o tid,psr,pcpu,stat,comm
+```
+
+SDK 是多线程程序，只修改主 PID 可能无法迁移已经创建的线程。应逐线程绑定到当前空闲的多个核心，例如避开繁忙的 CPU1：
+
+```sh
+PID=$(pgrep -n -f rslidar_sdk_node)
+for TID in /proc/$PID/task/*; do
+  taskset -pc 0,2-3 "${TID##*/}"
+done
+```
+
+绑定后重新执行 `ps -T`，确认 `PSR` 只出现在允许的核心。不要把多线程 SDK 固定到单个核心。该设置只对当前进程有效，重启节点后会恢复默认；恢复全部 CPU：
+
+```sh
+PID=$(pgrep -n -f rslidar_sdk_node)
+for TID in /proc/$PID/task/*; do
+  taskset -pc 0-3 "${TID##*/}"
+done
+```
+
+绑定后分别测试两路频率，不要同时运行两个 `ros2 topic hz`：
+
+```sh
+timeout 30s ros2 topic hz /rslidar_points_front
+timeout 30s ros2 topic hz /rslidar_points_rear
+mpstat -P ALL 1 10
+```
+
+同时比较测试前后的 UDP 累计计数：
+
+```sh
+cat /proc/net/snmp | grep '^Udp:'
+```
+
+重点观察 `InErrors` 和 `RcvbufErrors` 的增量。历史值非零不代表当前仍在丢包；若计数不增加而频率仍低，应继续检查 ROS2/DDS 订阅者、RViz、LIO 和其他业务负载。性能测试时尽量关闭 RViz，并避免重复启动多个 SDK 节点。

@@ -12,3 +12,6 @@ cmake-build-debug/
 version.h
 *.pb.cc
 *.pb.h
+
+__pycache__/
+*.py[cod]

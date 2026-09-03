@@ -58,7 +58,7 @@ Visualization Manager:
       Max Intensity: 241
       Min Color: 0; 0; 0
       Min Intensity: 1
-      Name: PointCloud2
+      Name: M20 Front PointCloud
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 1
@@ -68,15 +68,49 @@ Visualization Manager:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /rslidar_points
+        Reliability Policy: Best Effort
+        Value: /rslidar_points_front
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+  Enabled: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 30.831819534301758
+        Min Value: -6.263338565826416
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 241
+      Min Color: 0; 0; 0
+      Min Intensity: 1
+      Name: M20 Rear PointCloud
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 1
+      Size (m): 0.05000000074505806
+      Style: Points
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /rslidar_points_rear
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: rslidar
+    Fixed Frame: rslidar_front
     Frame Rate: 30
   Name: root
   Tools:
