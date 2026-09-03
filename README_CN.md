@@ -112,6 +112,10 @@ sudo apt-get install -y libyaml-cpp-dev
 sudo apt-get install -y  libpcap-dev
 ```
 
+即使只连接在线 UDP 雷达，该开发包也不能省略。仓库内的 `rs_driver` 默认启用 PCAP
+解析，编译时仍会包含 `pcap.h`；缺少该头文件会在 `input_pcap.hpp` 报
+`fatal error: pcap.h: No such file or directory`。该错误与 ROS 2 Foxy 或点云类型无关。
+
 ## 1.4 编译、运行
 
 ### 1.4.1 依赖于ROS-catkin编译

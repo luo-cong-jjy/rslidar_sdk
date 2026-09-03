@@ -114,6 +114,12 @@ Installation:
 sudo apt-get install -y  libpcap-dev
 ```
 
+This development package is also required when the SDK is used only with a live UDP
+LiDAR. The bundled `rs_driver` enables PCAP parsing by default, so `pcap.h` is included
+at compile time even when the runtime configuration uses `msg_source: 1`. If it is
+missing, the build fails in `input_pcap.hpp` with `fatal error: pcap.h: No such file or
+directory`.
+
 ## 4 Compile & Run
 
 ### 4.1 Compile with ROS catkin tools
@@ -217,14 +223,33 @@ git submodule update --init --recursive
 ```sh
 cd ~/robodog_nav_system
 source /opt/ros/foxy/setup.bash
-colcon build --packages-select rslidar_msg rslidar_sdk --symlink-install
+
+# 必需：rs_driver 默认编译 PCAP 输入，在线 UDP 实机部署也不能省略开发头文件。
+sudo apt update
+sudo apt install -y libyaml-cpp-dev libpcap-dev
+test -f /usr/include/pcap.h && echo "pcap.h OK"
+
+export MAKEFLAGS="-j1 -l1"
+colcon build \
+  --executor sequential \
+  --parallel-workers 1 \
+  --packages-select rslidar_msg rslidar_sdk \
+  --symlink-install \
+  --cmake-clean-cache \
+  --cmake-args -DCMAKE_BUILD_TYPE=Release -DPOINT_TYPE=XYZIRT
 source install/setup.bash
 
 ros2 pkg list | grep -E '^rslidar_(msg|sdk)$'
 ros2 pkg executables rslidar_sdk
 ```
 
-实机验证的 SDK 与驱动版本均为 `v1.5.20`，解码类型为 `RSAIRY`。前后两路均能发布有效的 `sensor_msgs/msg/PointCloud2`，字段为 `x`、`y`、`z` 和 `intensity`。
+如果缺少 `libpcap-dev`，编译会在 `input_pcap.hpp` 报
+`fatal error: pcap.h: No such file or directory`。这与 `POINT_TYPE=XYZIRT` 无关，不应通过
+回退点云类型解决。
+
+实机验证的 SDK 与驱动版本均为 `v1.5.20`，解码类型为 `RSAIRY`。前后两路均能发布有效的
+`sensor_msgs/msg/PointCloud2`；当前 `POINT_TYPE=XYZIRT` 构建应包含
+`x`、`y`、`z`、`intensity`、`ring` 和逐点 `timestamp` 字段。
 
 ### 8.3 网络和转播服务预检
 
